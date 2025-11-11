@@ -1,0 +1,15 @@
+# Ignore node dependencies
+node_modules/
+
+# Ignore SSL certs (important!)
+certs/
+
+# Ignore log files
+*.log
+
+# Ignore OS clutter
+.DS_Store
+Thumbs.db
+
+# Ignore environment configs
+.env

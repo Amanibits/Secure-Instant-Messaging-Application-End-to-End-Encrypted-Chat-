@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="styles.css">
+    <title>Secure IM — Phase 2</title>
+</head>
+
+<body>
+    <div class="page">
+        <header class="header">
+            <!-- App title + quick capability line -->
+            <div class="title">
+                <strong>Secure IM — Phase 2</strong>
+                <span class="subtitle">AES-GCM · @mentions for DM · Ciphertext-only server</span>
+            </div>
+        </header>
+
+        <main class="main">
+        <!--
+        Message log (chat transcript)
+        - Filled by client.js via addMsg()
+        - aria-live="polite" announces new content to assistive tech without being disruptive
+         -->
+            <section id="log" class="log" aria-live="polite" aria-label="Messages"></section>
+
+        <!--
+        "Login" step (Phase 2 lightweight accounts)
+        - User provides a display name (no passwords/auth in Phase 2)
+        - client.js -> setDisplayName() then socket.emit('register', name)
+        -->
+
+            <div id="nameRow" class="key-row" role="group" aria-label="Display name">
+                <input id="nameInput" class="input" type="text" placeholder="Enter a unique username (e.g., athena)"
+                    autocomplete="off" aria-label="Display name">
+                <button id="setNameBtn" class="btn">Set Name</button>
+            </div>
+
+        <!--
+        Shared symmetric key (Phase 1 requirement, kept in Phase 2)
+        - Base64-encoded 32-byte key (AES-256)
+        - Stored in sessionStorage; server never sees plaintext or the key
+        - client.js -> setKeyFromB64()
+        -->
+            <div id="keyRow" class="key-row" role="group" aria-label="Shared key">
+                <input id="keyInput" class="input" type="password" placeholder="Paste 256-bit key (Base64)"
+                    autocomplete="off" aria-label="Shared key (Base64)">
+                <button id="setKeyBtn" class="btn">Set Key</button>
+            </div>
+
+        <!--
+        Chat form
+        - Type @recipient first to route a DM (e.g., "@amani hi")
+        - client.js parses @name, encrypts plaintext with WebCrypto AES-GCM,
+          sends {ivB64, ctB64} via Socket.IO.
+        - The mention dropdown below is positioned/managed by client.js.
+        -->
+            <form id="chatForm" class="form" autocomplete="off" aria-label="Send message">
+                <input id="textInput" class="input" type="text"
+                    placeholder="Type @name to direct message… then your text" aria-label="Message">
+                <button type="submit" class="btn btn-primary">Send</button>
+            </form>
+
+        <!--
+        @mention dropdown
+        - Hidden by default; client.js shows it when user types "@..."
+        - Lists online first, then offline users (from presence)
+        - Clicking (or Enter/Tab) inserts "@name " into the input
+        -->
+            <div id="mentionMenu" class="mention-menu" hidden></div>
+        </main>
+
+        <footer class="footer">
+            <!-- Quick capabilities reminder; safe to edit/remove -->
+            <small>Phase 2 demo · AES-GCM in browser · Socket.IO transport · No plaintext on server</small>
+        </footer>
+    </div>
+
+    <!--
+    Socket.IO client (served by the Node server at /socket.io/socket.io.js)
+    - Provides the global io() function used by client.js
+     -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <!--
+    App logic
+    - Handles WebCrypto, mentions, presence, delivery/read receipts, rendering
+    -->
+    <script src="client.js"></script>
+</body>
+</html>
