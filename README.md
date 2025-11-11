@@ -48,75 +48,61 @@ A secure real-time messaging application using **AES-GCM encryption in the brows
 
 ## Project Structure
 
+```bash
 project/
-├── server.js # HTTPS + Socket.IO server
-├── certs/
-│ ├── cert.pem # Local SSL cert (self-signed)
-│ └── key.pem # Local SSL private key
-└── public/
-├── index.html # Basic HTML UI layout
-├── client.js # WebCrypto + messaging logic
-└── styles.css # Custom theme + layout
+├─ server.js
+├─ certs/
+│  ├─ cert.pem
+│  └─ key.pem
+└─ public/
+   ├─ index.html
+   ├─ client.js
+   └─ styles.css
 
+```
 ---
 
-## 🏁 How to Run (For Teammates)
+## How to Run:
 
-### 1) Install Dependencies
 ```bash
+### 1) Install Dependencies
 npm install
 
 2) Generate HTTPS Certificates (Only if certs/ does not exist)
-
 mkdir certs
 openssl req -x509 -newkey rsa:2048 -nodes -keyout certs/key.pem -out certs/cert.pem -days 365
 
 Press Enter for all prompts.
 
 3) Start the Secure Server
-
 node server.js
 
 4) Open the Application
+Visit: https://localhost:3000
+and https://YOUR_LOCAL_MACHINE_IP:3000
 
-Visit:
-
-https://localhost:3000
-&
-https://YOUR_LOCAL_MACHINE_IP:3000
-
-You can open as many tabs and form different users 
-
+You can open as many tabs and form different users.
 Browser will warn about "Not Secure" — click Advanced → Proceed
-This is normal for self-signed certificates.
 
 
 Using the App
-Step 1 — Set Your Username
 
+Step 1 — Set Your Username
 Enter a name (e.g., amani, zainab)
 → Click Set Name
 
 Step 2 — Enter the Shared AES Key
-
 All users must paste the same Base64 key.
-
 Generate a fresh key (optional or lazy way) in browser console:
-
 btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))))
 
 Step 3 — Send a Direct Message
-
 Format:
-
 @username your message here
+Example: @amani are you online?
 
-
-Example:
-
-@amani are you online?
-
-
+```
+---
 Message Status Indicators
 Status | Meaning
 sending… | Encrypting + sending to server
@@ -124,7 +110,7 @@ sent | Server stored ciphertext (recipient offline)
 delivered |Recipient is online and received it
 read |	Recipient opened and decrypted the message
 
-
+---
 Security Notes <Flow>:
 Encryption never leaves the client
 Server does not hold keys
