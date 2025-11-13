@@ -58,49 +58,87 @@ async function connectDB() {
 
 //call the function to connect to the database at startup at server initiation
 // end of MongoDB connection setup
-const fs = require('fs')
-const https = require('https')
-const express = require('express')
-const bodyParser = require('body-parser')
-const handlebars= require ('express-handlebars')
-const { Server } = require('socket.io')
-
-const app = express();
 
 //************************************************************************************************************************/
 
 // Zeinab's part
+const bodyParser = require('body-parser')
+const handlebars= require ('express-handlebars')
+const crypto= require('crypto')
+const app = express();
 app.use(bodyParser.urlencoded())
 app.set('views', __dirname+'/views')
 app.set('view engine', 'handlebars')
 app.engine('handlebars', handlebars.engine())
 
 // Render registration page
-app.get('/register', (req, res) => {
+app.get('/register', async (req, res) => {
   res.render('registration', {layout:undefined});
 });
 
 // Handle what happens after user registers (includes generation of key pair)
-app.post('/register', (req, res) => {
-  const { username, password } = req.body;
-  console.log('Register attempt:', username, password);
-  // This here will save the user and also generate their key pair
-  res.redirect('/login');
+app.post('/register', async (req, res) => {
+  let username = req.body.username
+  let password = req.body.password
+  let confirmPassword = req.body.confirmpassword
+  if (password !== confirmPassword) {
+    return res.redirect('/register?error=passwords+do+not+match')
+  }
+
+  // I am checking here if the username exists or not if yes we do not allow creation of account
+  let existing = await usersCollection.findOne({username: username})
+  if (existing){
+    return res.redirect('/register?error=username+is+taken')
+  }
+
+  // Here I am checking the length of the password
+  if (password.length < 8){
+    return res.redirect('/register?error=password+must+be+8+or+more+characters')
+  }
+
+  let salt = crypto.randomUUID()
+  let hash = crypto.createHash('sha256')
+  let hashedPassword = hash.update(password + salt).digest('hex')
+  let newUser = {
+    username: username,
+    password: hashedPassword,
+    salt: salt
+  }
+  await usersCollection.insertOne(newUser);
+  res.redirect('/login')
 });
 
 // Render the login page
-app.get('/login', (req, res) => {
+app.get('/login', async (req, res) => {
   res.render('login', {layout:undefined});
 });
 
 // Handle what happens after user logs in (includes authentication)
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
   let username= req.body.username
   let password= req.body.password
-  console.log('We are trying to log in as:', username, password);
-  // I am going to add auhtnetication here
-  res.redirect('/');
+  console.log('We are trying to log in as:', username, password)
+  let user = await usersCollection.findOne({ username: username })
+  if (!user) {
+    console.log('Login failed: user not found')
+    return res.redirect('/login?error=user+not+found')
+  }
+  let salt = user.salt
+  let hash = crypto.createHash('sha256')
+  let updatedHash = hash.update(password+salt)
+  let hashedPassword = updatedHash.digest('hex')
+  if (hashedPassword !== user.password) {
+      console.log('Login failed: wrong password')
+      res.redirect('/login')}
+  res.redirect(`/account/${username}`)
 });
+
+app.get('/account/:name', async (req, res) => {
+  const name = req.params.name;
+  const users = await usersCollection.find({}).toArray();
+  res.render('chat', { layout: false, name, users }); 
+});
+
 
 //************************************************************************************************************************/
 

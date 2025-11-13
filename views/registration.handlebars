@@ -2,15 +2,26 @@
 <head>
     <meta charset="UTF-8">
     <title>Registration page</title>
-    <link rel="stylesheet" href="../public/stylesnew.css">
+    <link rel="stylesheet" href="/stylesnew.css">
 </head>
+
+<header>
+    <h1>Secure Instant Messaging App</h1>
+</header>
+
 <body>
-    <h2>Register to use our application</h2>
+    <div class="box">
+    <h2>Register your account</h2>
     <form action="/register" method="POST">
     <input type="text" name="username" placeholder="Username" required>
     <input type="password" name="password" placeholder="Password" required>
+    <input type="password" name="confirmpassword" placeholder="Confirm Password" required>
     <button type="submit">Create Account</button>
     </form>
     <p>Already have an account? <a href="/login">Login here</a></p>
+    </div>
 </body>
 
+<footer>
+    <p>Created by Zeinab, Amani, Athena, Salma - DACS3101 2025</p>
+</footer>

@@ -1,1 +1,95 @@
-/* I will have my styles here soon */
+/* Zeinab's part- css */
+/* I got us a good font to use in our display! */
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600&display=swap');
+
+body {
+    font-family: 'Baloo', sans-serif;
+    background-color: #f5f6fa;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    height: 100vh;
+}
+
+form {
+    width: 100%;
+    text-align: center;
+}
+
+
+.box {
+    background-color: white;
+    padding: 40px 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 320px;
+    text-align: center;
+    margin: 0px 0px 100px 0px;
+}
+
+h2 {
+    font-size: 30px;
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333333;
+}
+
+input {
+    width: 90%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #cccccc;
+    border-radius: 5px;
+}
+
+button {
+    width: 95%;
+    padding: 10px;
+    background-color: #a475b3;
+    border: none;
+    color: white;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+button:hover {
+    background-color: #a475b3;
+}
+
+p {
+    text-align: center;
+    font-size: 14px;
+    margin-top: 15px;
+}
+
+a {
+    color: #a475b3;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+header {
+    font-family: 'Baloo', sans-serif;
+    color: #573563;
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
+    padding: 15px 0;
+}
+
+footer {
+    font-family: 'Baloo', sans-serif;
+    font-size: 14px;
+    background-color: #573563;
+    color: white;
+    text-align: center;
+    padding: 3px 0;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}

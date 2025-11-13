@@ -1,0 +1,131 @@
+/* Zeinab- Style sheet for the chatting page! I decided to put it on a seperate folder
+because I wanted some tags to have different stylings*/
+
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600&display=swap');
+
+* {
+    font-family: 'Baloo', sans-serif;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    height: 100vh;
+    background: #f9f9f9;
+}
+
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #a475b3;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    font-weight: bold;
+    font-size: larger;
+    z-index: 1000; 
+}
+
+#sidebar {
+    width: 200px;           
+    background-color: #573563; 
+    color: #f5f6fa;        
+    padding: 10px;         
+    overflow-y: auto; 
+    margin-top: 40px;     
+}
+
+#sidebar h4 {
+    font-style: bold;
+    margin-bottom: 10px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.user {
+    padding: 8px 10px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.user:hover {
+    background: #573563;
+}
+
+.user.online {
+    font-weight: bold;
+    color: #44bd32;
+}
+
+#chat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+}
+
+#chat h4 {
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+#messages {
+    flex: 1;
+    border: 1px solid #dcdde1;
+    border-radius: 5px;
+    padding: 10px;
+    background: #fff;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+#messages div {
+    padding: 5px 8px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+}
+
+#messages div:nth-child(odd) {
+    background: #f1f2f6;
+}
+
+#messages div:nth-child(even) {
+    background: #dcdde1;
+}
+
+#chat > div:last-child {
+    display: flex;
+}
+
+#messageInput {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: 5px;
+    border: 1px solid #dcdde1;
+    outline: none;
+    font-size: 14px;
+}
+
+#sendButton {
+    margin-left: 10px;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    background: #a475b3;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#sendButton:hover {
+    background: #44bd32;
+}
+
+

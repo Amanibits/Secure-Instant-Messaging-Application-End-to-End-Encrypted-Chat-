@@ -12,7 +12,10 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "crypto": "^1.0.1",
     "express": "^5.1.0",
+    "express-handlebars": "^8.0.1",
+    "mongodb": "^7.0.0",
     "socket.io": "^4.8.1"
   },
   "repository": {

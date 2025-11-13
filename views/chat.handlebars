@@ -1,0 +1,127 @@
+<!-- Zeinab's part: The chatting page UI! UNDER CONSTRUCTIOOONN -->
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Chatting</title>
+    <link rel="stylesheet" href="/chatstyle.css">
+</head>
+
+<body>
+<header>Welcome <span id="displayName">{{name}}</span></header>
+
+<div id="sidebar">
+    <h4>Users</h4>
+    <div id="users">
+        {{#each users}}
+            <div class="user {{#if online}}online{{/if}}" data-username="{{this.username}}">
+                {{this.username}}
+            </div>
+        {{/each}}
+    </div>
+</div>
+
+<div id="chat">
+    <h4 id="chatWith">Select a user</h4>
+    <div id="messages"></div>
+
+    <!-- Display name input -->
+    <div id="nameRow">
+        <input id="nameInput" placeholder="Enter a display name" autocomplete="off">
+        <button id="setNameBtn">Set Name</button>
+    </div>
+
+    <!-- AES key input -->
+    <div id="keyRow">
+        <input id="keyInput" type="password" placeholder="Paste 256-bit key (Base64)" autocomplete="off">
+        <button id="setKeyBtn">Set Key</button>
+    </div>
+
+    <div id="messageBox">
+        <input id="messageInput" placeholder="Message">
+        <button id="sendButton">Send</button>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+const usersEl = document.getElementById('users');
+const messagesEl = document.getElementById('messages');
+const chatWithEl = document.getElementById('chatWith');
+const messageInput = document.getElementById('messageInput');
+const sendButton = document.getElementById('sendButton');
+
+const nameInput = document.getElementById('nameInput');
+const setNameBtn = document.getElementById('setNameBtn');
+const displayNameEl = document.getElementById('displayName');
+
+const keyInput = document.getElementById('keyInput');
+const setKeyBtn = document.getElementById('setKeyBtn');
+
+let currentUser = null;
+let displayName = sessionStorage.getItem('displayName') || null;
+let sharedKey = sessionStorage.getItem('cryptoKey') || null;
+
+// Initialize display name if stored
+if(displayName){
+    displayNameEl.textContent = displayName;
+    nameInput.value = displayName;
+}
+
+// Set display name
+setNameBtn.onclick = () => {
+    const name = nameInput.value.trim();
+    if(!name) return alert('Enter a name');
+    displayName = name;
+    sessionStorage.setItem('displayName', name);
+    displayNameEl.textContent = name;
+    socket.emit('register', name);
+};
+
+// Set AES key
+setKeyBtn.onclick = () => {
+    const key = keyInput.value.trim();
+    if(!key) return alert('Enter a key');
+    sharedKey = key;
+    sessionStorage.setItem('cryptoKey', key);
+};
+
+// Select a user to chat with
+usersEl.addEventListener('click', e => {
+    const userDiv = e.target.closest('.user');
+    if(!userDiv) return;
+    currentUser = userDiv.dataset.username;
+    chatWithEl.textContent = 'Chat with ' + currentUser;
+    messagesEl.innerHTML = '';
+});
+
+// Send message
+sendButton.onclick = () => {
+    if(!displayName) return alert('Set your display name first');
+    if(!sharedKey) return alert('Set your shared key first');
+    if(!currentUser) return alert('Select a user');
+    const text = messageInput.value.trim();
+    if(!text) return;
+    // For now we send plaintext; replace with AES-GCM encryption in client.js
+    socket.emit('message', {to: currentUser, text});
+    appendMessage('Me', text);
+    messageInput.value = '';
+};
+
+// Receive message
+socket.on('message', data => {
+    if(data.from === currentUser) appendMessage(data.from, data.text);
+});
+
+function appendMessage(sender, text){
+    const div = document.createElement('div');
+    div.textContent = sender + ': ' + text;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+</script>
+</body>
+</html>
+
