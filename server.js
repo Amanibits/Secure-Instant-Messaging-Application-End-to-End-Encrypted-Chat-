@@ -33,7 +33,9 @@ const express = require('express');
 const { Server } = require('socket.io');
 const { MongoClient } = require('mongodb'); // require mongodb client to connect to the database
 
+//************************************************************************************************************************/
 
+// Athena's part
 // start of MongoDB connection setup  
 // reference: https://www.mongodb.com/blog/post/quick-start-nodejs-mongodb-how-to-get-connected-to-your-database
 const uri = 'mongodb+srv://team_access:qn5ulVpH2JFUCXvh@cluster1.skejaaj.mongodb.net/?appName=Cluster1'; //connection string to the database
@@ -64,6 +66,8 @@ const handlebars= require ('express-handlebars')
 const { Server } = require('socket.io')
 
 const app = express();
+
+//************************************************************************************************************************/
 
 // Zeinab's part
 app.use(bodyParser.urlencoded())
@@ -97,6 +101,8 @@ app.post('/login', (req, res) => {
   // I am going to add auhtnetication here
   res.redirect('/');
 });
+
+//************************************************************************************************************************/
 
 // Amani's part
 // Serve our static client app

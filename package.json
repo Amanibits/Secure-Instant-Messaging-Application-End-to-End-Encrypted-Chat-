@@ -1,7 +1,7 @@
 {
   "name": "cryptoproject",
   "version": "1.0.0",
-  "description": "",
+  "description": "A secure real-time messaging application using **AES-GCM encryption in the browser**, **no plaintext stored on the server**, and **direct messaging via @username** with **delivery + read receipts**.",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -14,5 +14,13 @@
   "dependencies": {
     "express": "^5.1.0",
     "socket.io": "^4.8.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Amanibits/Secure-Instant-Messaging-Application-End-to-End-Encrypted-Chat-.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Amanibits/Secure-Instant-Messaging-Application-End-to-End-Encrypted-Chat-/issues"
+  },
+  "homepage": "https://github.com/Amanibits/Secure-Instant-Messaging-Application-End-to-End-Encrypted-Chat-#readme"
 }

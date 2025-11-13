@@ -1,4 +1,4 @@
-# 🔐 Secure Instant Messaging — Phase 1 & Phase 2
+# Secure Instant Messaging — Phase 1 & Phase 2
 
 A secure real-time messaging application using **AES-GCM encryption in the browser**, **no plaintext stored on the server**, and **direct messaging via @username** with **delivery + read receipts**.
 
@@ -93,7 +93,7 @@ Browser will warn about "Not Secure" — click Advanced → Proceed
 Using the App
 
 Step 1 — Set Your Username
-Enter a name (e.g., amani, zainab)
+Enter a name (ex: amani, zainab)
 → Click Set Name
 
 Step 2 — Enter the Shared AES Key
