@@ -33,6 +33,9 @@ A secure real-time messaging application using **AES-GCM encryption in the brows
 - **Delivery status:** `sent`, `delivered`
 - **Read status:** `read` once the message is decrypted by recipient
 
+### Phase 3 (Ongoing)
+- MongoDB set up to store user and public keys (no message history)
+
 ---
 
 ## Tech Stack
@@ -65,8 +68,10 @@ project/
 ## How to Run:
 
 ```bash
-### 1) Install Dependencies
+### 1) Install Dependencies AND MongoDB driver
 npm install
+npm install mongodb
+
 
 2) Generate HTTPS Certificates (Only if certs/ does not exist)
 mkdir certs
@@ -116,3 +121,5 @@ Encryption never leaves the client
 Server does not hold keys
 Server cannot decrypt stored messages
 In-memory message storage = no SQL or NoSQL yet # Secure-Instant-Messaging-Application-End-to-End-Encrypted-Chat-
+ 
+---

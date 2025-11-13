@@ -20,12 +20,42 @@
 //
 // RUN
 //   node server.js   (make sure certs/key.pem and certs/cert.pem exist)
+// 
+// UPDATES:
+// - Phase 3: MongoDB integration to store username ONLY
+// - next step: store public keys as well
 // -----------------------------------------------------------------------------
+
 
 const fs = require('fs');
 const https = require('https');
 const express = require('express');
 const { Server } = require('socket.io');
+const { MongoClient } = require('mongodb'); // require mongodb client to connect to the database
+
+
+// start of MongoDB connection setup  
+// reference: https://www.mongodb.com/blog/post/quick-start-nodejs-mongodb-how-to-get-connected-to-your-database
+const uri = 'mongodb+srv://team_access:qn5ulVpH2JFUCXvh@cluster1.skejaaj.mongodb.net/?appName=Cluster1'; //connection string to the database
+const client = new MongoClient(uri);
+let db;                  // database object
+let usersCollection; // collection to store user names and their public keys
+let messagesCollection;  // collection to store user messages
+
+async function connectDB() {
+  try {
+    await client.connect();             // wait for connection to mongoDB server
+    db = client.db('Secure_Chat_App');         // access Secure_Chat_App database
+    usersCollection = db.collection('users'); // stores user name and their public keys
+    messagesCollection = db.collection('messages'); // store user messages
+    console.log('[MongoDB] Connected to database.');
+  } catch (err) {
+    console.error('[MongoDB] Connection failed:', err);
+  }
+}
+
+//call the function to connect to the database at startup at server initiation
+// end of MongoDB connection setup
 
 const app = express();
 
@@ -95,7 +125,7 @@ io.on('connection', (socket) => {
   console.log(`[+] Connected ${socket.id}`);
 
   // 1) Registration: client claims a username (no passwords in Phase 2)
-  socket.on('register', (username, ack) => {
+  socket.on('register', async (username, ack) => {
     const name = (typeof username === 'string' ? username.trim() : '');
     if (!name || name.length > 32) {
       ack?.({ ok: false, error: 'Invalid username' });
@@ -105,6 +135,33 @@ io.on('connection', (socket) => {
     knownUsers.add(name);
     attachUser(name, socket.id);
     socket.data.username = name;
+
+    // MongoDB users collection update: includes username
+
+    try {
+      const isInDB = await usersCollection.findOne({ username: name });
+      if (!isInDB) {
+        const result = await usersCollection.insertOne(
+          { username: name }
+        );
+        console.log(`[MongoDB] User "${name}" is added.`, result);
+      } else {
+        console.log(`[MongoDB] User "${name}" already exists in database.`);}
+        } catch (err) {
+      console.error(`[MongoDB] Failed to update user "${name}":`, err);
+    }
+
+    // try {
+    //   const result = await usersCollection.updateOne(
+    //     { username: name },
+    //     { $set: { username: name } },
+    //     { $upsert: true } // insert if name does not exist in the collection
+    //   );
+    //   console.log(`[MongoDB] User "${name}" is added.`, result);
+    // } catch (err) {
+    //   console.error(`[MongoDB] Failed to update user "${name}":`, err);
+    // }
+
 
     // Send personal history (messages where I’m sender or recipient)
     const mine = messages.filter(m => m.sender === name || m.recipient === name);
@@ -225,8 +282,16 @@ io.on('connection', (socket) => {
    Start HTTPS server
    -------------------------------------------------------------------------- */
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`   HTTPS server on https://localhost:${PORT}`);
-  console.log(`   Self-signed cert: accept the warning in your browser once.`);
-});
+// for runnning purposes, i changed the port to 3001. port 3000 is used by another service in my device. REMINDER TO CHANGE BACK TO 3000 BEFORE FINAL SUBMISSION
+// do async function IIFE to allow top-level await for mongodb connection
+
+(async () => {
+  await connectDB(); // wait for successful connection to the database
+  // await usersCollection.insertOne({ username: "TEST_USER" });
+  // console.log("Inserted TEST_USER into MongoDB");
+  const PORT = process.env.PORT || 3001;
+  server.listen(PORT, () => {
+    console.log(`   HTTPS server on https://localhost:${PORT}`);
+    console.log(`   Self-signed cert: accept the warning in your browser once.`);
+  });
+})();
