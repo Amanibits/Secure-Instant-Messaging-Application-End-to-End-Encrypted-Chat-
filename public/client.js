@@ -14,6 +14,11 @@
 //   • sent: stored server-side but recipient offline
 //   • delivered: recipient device received it (online)
 //   • read: the recipient rendered it (client emitted mark-read)
+//
+//  UPDATES:
+// - Manual AES generation removed (user pastes Base64 32-byte key), update to automatically generate
+// 
+// 
 // -----------------------------------------------------------------------------
 
 /* -----------------------------------------------------------------------------
