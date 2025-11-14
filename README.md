@@ -123,3 +123,7 @@ Server cannot decrypt stored messages
 In-memory message storage = no SQL or NoSQL yet # Secure-Instant-Messaging-Application-End-to-End-Encrypted-Chat-
  
 ---
+
+// Zeinab Notes:
+Might need to delete old_server.js, index.handlebars, styles.css later
+(replaced with server.js, chat.handlebars, stylesnew.css)

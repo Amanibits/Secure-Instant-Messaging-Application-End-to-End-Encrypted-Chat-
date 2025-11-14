@@ -25,5 +25,6 @@
   "bugs": {
     "url": "https://github.com/Amanibits/Secure-Instant-Messaging-Application-End-to-End-Encrypted-Chat-/issues"
   },
-  "homepage": "https://github.com/Amanibits/Secure-Instant-Messaging-Application-End-to-End-Encrypted-Chat-#readme"
+  "homepage": "https://github.com/Amanibits/Secure-Instant-Messaging-Application-End-to-End-Encrypted-Chat-#readme",
+  "devDependencies": {}
 }

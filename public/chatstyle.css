@@ -30,13 +30,19 @@ header {
     z-index: 1000; 
 }
 
+#displayName {
+    font-size: larger;
+    color: white;
+    padding-top: 10px;
+}
+
 #sidebar {
     width: 200px;           
     background-color: #573563; 
     color: #f5f6fa;        
     padding: 10px;         
     overflow-y: auto; 
-    margin-top: 40px;     
+    margin-top: 50px;     
 }
 
 #sidebar h4 {
@@ -58,9 +64,18 @@ header {
     background: #573563;
 }
 
-.user.online {
+.status {
+    margin-left: 8px;
+    font-size: 12px;
     font-weight: bold;
-    color: #44bd32;
+}
+
+.status.online {
+    color: #44bd32;  
+}
+
+.status.offline {
+    color: #dcdde1;   
 }
 
 #chat {
@@ -126,6 +141,21 @@ header {
 
 #sendButton:hover {
     background: #44bd32;
+}
+
+#logoutButton {
+    float: right;
+    margin-right: 20px;
+    background: #573563;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+#logoutButton:hover {
+    color: #a475b3;
 }
 
 
