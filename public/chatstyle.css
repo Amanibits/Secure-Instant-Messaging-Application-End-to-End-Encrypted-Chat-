@@ -86,8 +86,10 @@ header {
 }
 
 #chat h4 {
+    font-size: large;
+    margin-top: 0;
     margin-bottom: 10px;
-    font-weight: 500;
+    padding-top:55px; 
 }
 
 #messages {
@@ -124,7 +126,7 @@ header {
     border-radius: 5px;
     border: 1px solid #dcdde1;
     outline: none;
-    font-size: 14px;
+    font-size: 17px;
 }
 
 #sendButton {

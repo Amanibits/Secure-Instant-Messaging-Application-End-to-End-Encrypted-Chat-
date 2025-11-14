@@ -28,13 +28,7 @@
     <h4 id="chatWith">Select a user</h4>
     <div id="messages"></div>
 
-    <!-- Display name input -->
-    <div id="nameRow">
-        <input id="nameInput" placeholder="Enter a display name" autocomplete="off">
-        <button id="setNameBtn">Set Name</button>
-    </div>
-
-    <!-- AES key input -->
+    <!-- This will be removed laterrr -->
     <div id="keyRow">
         <input id="keyInput" type="password" placeholder="Paste 256-bit key (Base64)" autocomplete="off">
         <button id="setKeyBtn">Set Key</button>
@@ -136,15 +130,14 @@ function addMessage(sender, text){
 }
 
 // -------------------------
-// Set display name
+// Set display name (AUTOMATIC AT LOGIN!)
 // -------------------------
-setNameButton.onclick = () => {
-    const n = nameInput.value.trim()
-    if(!n) return alert("Enter a name")
-    displayName = n
-    displayNameEl.textContent = n
-    socket.emit("register", n)
-}
+window.addEventListener('DOMContentLoaded', () => {
+    displayName = "{{name}}"; // Handlebars variable
+    displayNameEl.textContent = displayName;
+    socket.emit("register", displayName);
+});
+
 
 // -------------------------
 // Set AES key (accept hex or Base64)
@@ -189,7 +182,7 @@ usersEl.addEventListener('click', e => {
     const div = e.target.closest('.user')
     if(!div) return
     currentUser = div.dataset.username
-    chatWithEl.textContent = "Chat with " + currentUser
+    chatWithEl.textContent = "You are now chatting with: " + currentUser
     messagesEl.innerHTML = ""
 })
 

@@ -127,3 +127,12 @@ In-memory message storage = no SQL or NoSQL yet # Secure-Instant-Messaging-Appli
 // Zeinab Notes:
 Might need to delete old_server.js, index.handlebars, styles.css later
 (replaced with server.js, chat.handlebars, stylesnew.css)
+
+To use app:
+1) go to landing page
+2) make an account (pass length has to be 8+, username cant be taken)
+3) login with your new account
+4) on another tab login as another user
+5) click on who you want to talk to
+6) set the same AES key on both sides (this will be changed later, make sure to click set key)
+7) send message and check that it is recieved on the other side

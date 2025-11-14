@@ -26,39 +26,6 @@
    addMsg(text, cls, ts?, status?, id?)
    -------------------------------------------------------------------------- */
 
-/* -----------------------------------------------------------------------------
-   Small UI helper for blinking bubbles into the log
-   addMsg(text, cls, ts?, status?, id?)
-   -------------------------------------------------------------------------- */
-
-function addMsg(text, cls = 'sys', ts /* optional ISO string */, status /* optional string */, id /* optional mid */) {
-  const logEl = document.getElementById('log')
-  if (!logEl) { console.warn('[secure-im] #log missing'); return }
-
-  const div = document.createElement('div')
-  div.className = `msg ${cls}`
-  if (id) div.dataset.mid = id // allow later status updates by id
-
-  const main = document.createElement('div')
-  main.textContent = text
-  div.appendChild(main)
-
-  // timestamp + status (tiny)
-  if (ts || status) {
-    const meta = document.createElement('span')
-    meta.className = 'meta'
-    let metaText = ''
-    if (ts) metaText += formatTs(ts)
-    if (ts && status) metaText += ' • '
-    if (status) metaText += status
-    meta.textContent = metaText
-    div.appendChild(meta)
-  }
-
-  logEl.appendChild(div)
-  logEl.scrollTop = logEl.scrollHeight
-}
-
 // Timestamp helper — keeps UI minimal (HH:MM local time)
 function formatTs(iso) {
   if (!iso) return ''
