@@ -1,4 +1,5 @@
 <!-- Zeinab's part: I made a simple registration page -->
+
 <head>
     <meta charset="UTF-8">
     <title>Registration page</title>
@@ -11,17 +12,106 @@
 
 <body>
     <div class="box">
-    <h2>Register your account</h2>
-    <form action="/register" method="POST">
-    <input type="text" name="username" placeholder="Username" required>
-    <input type="password" name="password" placeholder="Password" required>
-    <input type="password" name="confirmpassword" placeholder="Confirm Password" required>
-    <button type="submit">Create Account</button>
-    </form>
-    <p>Already have an account? <a href="/login">Login here</a></p>
+        <h2>Register your account</h2>
+        <form action="/register" method="POST" id="registerForm">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <input type="password" name="confirmpassword" placeholder="Confirm Password" required>
+            {{!-- CODE BELOW ADDED FOR PHASE 3, to store client side generated public key! --}}
+            <input type="hidden" name="publicKey" id="publicKeyField">
+            <button type="submit">Create Account</button>
+        </form>
+        <p>Already have an account? <a href="/login">Login here</a></p>
     </div>
 </body>
 
 <footer>
     <p>Created by Zeinab, Amani, Athena, Salma - DACS3101 2025</p>
 </footer>
+
+
+{{!-- athena's part --}}
+{{!-- added some we can use the functions from the file and save the public key upon registration --}}
+
+<script>
+
+    function bytesToB64(bytes) {
+        let bin = '';
+        for (const b of bytes) bin += String.fromCharCode(b);
+        return btoa(bin);
+    }
+
+    async function generateRSAkeyFromClient() {
+        const keyPair = await window.crypto.subtle.generateKey({
+            name: "RSA-OAEP",
+            modulusLength: 2048,
+            publicExponent: new Uint8Array([1, 0, 1]),
+            hash: "SHA-256"
+        }, true, 
+        ["encrypt", "decrypt"]);
+
+        const spki = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
+        const pubkB64 = bytesToB64(new Uint8Array(spki));
+        return { keyPair, pubkB64 };
+    }
+
+    async function exportPrivateKey(privateKey) {
+        const privkcs8 = await window.crypto.subtle.exportKey("pkcs8", privateKey);
+        return btoa(String.fromCharCode(...new Uint8Array(privkcs8)));
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const btn = this.querySelector('button');
+        btn.textContent = 'Generating keys...';
+        btn.disabled = true;
+
+        try {
+            const username = this.username.value.trim();
+            const password = this.password.value;
+            const confirmPassword = this.confirmpassword.value;
+
+            console.log('🔑 Generating RSA keys for:', username);
+
+            // generate rsa pair
+            const { keyPair, pubkB64 } = await generateRSAkeyFromClient();
+
+            // Export and save private key
+            const privateKeyB64 = await exportPrivateKey(keyPair.privateKey);
+
+            // save with username-specific key
+            localStorage.setItem(`privateKey_${username}`, JSON.stringify({
+                username: username,
+                key: privateKeyB64
+            }));
+            console.log(`Private key saved as: privateKey_${username}`);
+
+            console.log('Keys generated, submitting...');
+
+            const response = await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    username: username,
+                    password: password,
+                    confirmpassword: confirmPassword,
+                    publicKey: pubkB64
+                })
+            });
+
+            if (response.url.includes('/login')) {
+                alert('Registration successful! Please log in.');
+                window.location.href = '/login';
+            } else {
+                alert('Registration failed. Check console.');
+            }
+        } catch (err) {
+            console.error('Error:', err);
+            alert('Error: ' + err.message);
+        } finally {
+            btn.textContent = 'Create Account';
+            btn.disabled = false;
+        }
+    });
+</script>

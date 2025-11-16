@@ -33,8 +33,13 @@ A secure real-time messaging application using **AES-GCM encryption in the brows
 - **Delivery status:** `sent`, `delivered`
 - **Read status:** `read` once the message is decrypted by recipient
 
-### Phase 3 (Ongoing)
-- MongoDB set up to store user and public keys (no message history)
+### Phase 3 (Complete)
+- MongoDB set up to store user, public keys, and messages
+- RSA 112 bit key pair generation for each user upon registering (Old users won't have the keys)
+- Client-Side Automatic AES 256 bit key generation with renewal every 2 minutes
+- RSA public key is retrieved from db, while private key is locally stored in the computer.
+- encryption and decryption of AES using RSA public and private keys.
+
 
 ---
 
@@ -136,3 +141,26 @@ To use app:
 5) click on who you want to talk to
 6) set the same AES key on both sides (this will be changed later, make sure to click set key)
 7) send message and check that it is recieved on the other side
+
+---
+// Athena's Notes:
+Phase 3 Accomplished
+Files edited:
+- server.js
+- client.js 
+- chat.handlebars - i did not touch any UI, just the logics
+- registration.handlebars
+
+How to use:
+1. go to log in page
+2. create new accounts (same restraints from zeinab's) -- this should trigger the creation of rsa key pair
+   note: old accounts wont work for this update
+3. login with the account
+   if you want, you can test out my recent additions:
+      sara_rsa - sara1234
+      bob_rsa - bob123456
+      third_rsa - third1234
+4. on other tabs, log in as the other users
+5. click on who you want to talk to -- other people who are online won't see your message.
+   if browser refreshed or if click on different user to chat to, all previous chats disappear.
+6. send a message and check its received or not
