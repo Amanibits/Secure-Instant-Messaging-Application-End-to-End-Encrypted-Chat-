@@ -152,15 +152,12 @@ Files edited:
 - registration.handlebars
 
 How to use:
-1. go to log in page
-2. create new accounts (same restraints from zeinab's) -- this should trigger the creation of rsa key pair
+1. Open any browser (not in incognito or guest mode)
+2. go to log in page
+3. create new accounts (same restraints from zeinab's) -- this should trigger the creation of rsa key pair
    note: old accounts wont work for this update
-3. login with the account
-   if you want, you can test out my recent additions:
-      sara_rsa - sara1234
-      bob_rsa - bob123456
-      third_rsa - third1234
-4. on other tabs, log in as the other users
-5. click on who you want to talk to -- other people who are online won't see your message.
+4. login with the account on the same browser you created the account in. 
+5. on other tabs, log in as the other users
+6. click on who you want to talk to -- other people who are online won't see your message.
    if browser refreshed or if click on different user to chat to, all previous chats disappear.
-6. send a message and check its received or not
+7. send a message and check its received or not

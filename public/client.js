@@ -27,29 +27,29 @@
 
 function addMsg(text, cls, ts, status, id) {
   // readded this one to send error messages on the chat ui.
-  const log = document.getElementById('messageLog') || document.getElementById('messages');
+  const log = document.getElementById('messageLog') || document.getElementById('messages')
   if (!log) {
-    console.log(`[addMsg] ${text}`);  // At least log it if no UI element
+    console.log(`[addMsg] ${text}`)  // At least log it if no UI element
     return;
   }
 
-  const div = document.createElement('div');
-  div.className = `msg ${cls}`;
-  if (id) div.dataset.mid = id;
+  const div = document.createElement('div')
+  div.className = `msg ${cls}`
+  if (id) div.dataset.mid = id
 
-  const bubble = document.createElement('div');
-  bubble.className = 'bubble';
-  bubble.textContent = text;
+  const bubble = document.createElement('div')
+  bubble.className = 'bubble'
+  bubble.textContent = text
 
-  const meta = document.createElement('div');
-  meta.className = 'meta';
-  const time = formatTs(ts);
-  meta.textContent = time && status ? `${time} • ${status}` : (time || status || '');
+  const meta = document.createElement('div')
+  meta.className = 'meta'
+  const time = formatTs(ts)
+  meta.textContent = time && status ? `${time} • ${status}` : (time || status || '')
 
-  div.appendChild(bubble);
-  if (meta.textContent) div.appendChild(meta);
-  log.appendChild(div);
-  log.scrollTop = log.scrollHeight;
+  div.appendChild(bubble)
+  if (meta.textContent) div.appendChild(meta)
+  log.appendChild(div)
+  log.scrollTop = log.scrollHeight
 }
 
 // Timestamp helper — keeps UI minimal (HH:MM local time)
@@ -137,7 +137,7 @@ function bytesToB64(bytes) {
   return btoa(bin)
 }
 
-const sessionKeys = {}; // emptyy object to hold session keys for each user chat. this session key is the automatically generated AES key later you'll see in the code.
+const sessionKeys = {} // emptyy object to hold session keys for each user chat. this session key is the automatically generated AES key later you'll see in the code.
 
 // when we say session key, we mean the AES key used for encrypting the message between our users!
 // so this is the AES key generator function
@@ -151,7 +151,7 @@ async function generateSessionKey() {
     ['encrypt', 'decrypt'] // What can we do? Encrypt and decrypt
 
   );
-  return key;
+  return key
 }
 
 // Athena's part, phase 3
@@ -161,33 +161,33 @@ async function generateSessionKey() {
 // for simplicity, we are implementing 2 minute renewal time for session keys.
 // auto generate after 2 minutes of key creation.
 
-const session_lifetime = 2 * 60 * 1000; // 2 minutes in milliseconds
+const session_lifetime = 2 * 60 * 1000 // 2 minutes in milliseconds
 
 async function initializeSessionKey(recipient) {
 
   // here we check if we already have a key for the reciever,, makes sure that we do not generate multiple keys for same user for every message sent
   if (sessionKeys[recipient]) {
-    const session = sessionKeys[recipient];
-    const keyAge = Date.now() - session.timestamp; // just to check how old the key is
+    const session = sessionKeys[recipient]
+    const keyAge = Date.now() - session.timestamp // just to check how old the key is
 
     // checker if key still valid
     if (keyAge < session_lifetime) {
-      console.log(`using existing key for ${recipient} (${Math.floor(keyAge / 1000)}s old)`);
+      console.log(`using existing key for ${recipient} (${Math.floor(keyAge / 1000)}s old)`)
       return session.aesKey;
     } else {
       // 2 minutes passed already, so we need to renew the key
-      console.log(`key expired for ${recipient} (${Math.floor(keyAge / 1000)}s old). now renewing.`);
+      console.log(`key expired for ${recipient} (${Math.floor(keyAge / 1000)}s old). now renewing.`)
     }
   }
 
   // this is where we call generate session key function to create a new AES key, works for both new and renewing old keys
-  console.log(`generating new key for ${recipient}`);
-  const aesKey = await generateSessionKey();
+  console.log(`generating new key for ${recipient}`)
+  const aesKey = await generateSessionKey()
 
   // this is to delete the old expired key after renewal
   if (sessionKeys[recipient]) {
-    console.log(`old key deleted for ${recipient}`);
-    delete sessionKeys[recipient];
+    console.log(`old key deleted for ${recipient}`)
+    delete sessionKeys[recipient]
   }
 
   // here we store the new aes key with the timestamp of its creation to reset the timer for next renewal
@@ -197,8 +197,8 @@ async function initializeSessionKey(recipient) {
   };
 
   // this, we call the other function to securely give the session key to the recipient
-  await exchangeSessionKey(recipient, aesKey);
-  console.log(`the session key reinitialized and exchanged for ${recipient}`);
+  await exchangeSessionKey(recipient, aesKey)
+  console.log(`the session key reinitialized and exchanged for ${recipient}`)
   return aesKey;
 }
 
@@ -207,25 +207,25 @@ async function initializeSessionKey(recipient) {
 async function exchangeSessionKey(recipient, aesKey) {
   return new Promise((resolve, reject) => {  // added promise wrapper to go back here after the function finishes
     try {
-      console.log(`request public key for ${recipient}`);
+      console.log(`request public key for ${recipient}`)
 
       socket.emit('request-public-key', { username: recipient }, async (response) => {
         if (!response || !response.ok) {
-          reject(new Error(response?.error || 'Could not get public key'));
+          reject(new Error(response?.error || 'Could not get public key'))
           return;
         }
 
-        console.log(`received public key for ${recipient}`);
+        console.log(`received public key for ${recipient}`)
 
-        const recipientPublicKey = await importPublicKey(response.publicKey);
-        const rawKey = await crypto.subtle.exportKey('raw', aesKey);
+        const recipientPublicKey = await importPublicKey(response.publicKey)
+        const rawKey = await crypto.subtle.exportKey('raw', aesKey)
         const encryptedKey = await crypto.subtle.encrypt(
           { name: 'RSA-OAEP' },
           recipientPublicKey,
           rawKey
         );
 
-        const encryptedKeyB64 = bytesToB64(new Uint8Array(encryptedKey));
+        const encryptedKeyB64 = bytesToB64(new Uint8Array(encryptedKey))
 
         socket.emit('session-key-exchange', {
           sender: displayName,
@@ -233,62 +233,62 @@ async function exchangeSessionKey(recipient, aesKey) {
           encryptedSessionKey: encryptedKeyB64,
         });
 
-        console.log(`key sent to ${recipient}, waiting for confirmation...`);
+        console.log(`key sent to ${recipient}, waiting for confirmation...`)
 
         // this is where we wait for confirmation if recipient got the key
         const timeout = setTimeout(() => {
-          reject(new Error('Key exchange timeout'));
+          reject(new Error('Key exchange timeout'))
         }, 5000); // 5 second timeout
 
         socket.once('session-key-confirmed', (data) => {
           if (data.recipient === recipient) {
             clearTimeout(timeout);
             console.log(`${recipient} confirmed key receipt`);
-            addMsg(`Secure connection established with ${recipient}`, 'sys');
-            resolve();  // go back to the function after the recipient confirmed they got the key
+            addMsg(`Secure connection established with ${recipient}`, 'sys')
+            resolve()  // go back to the function after the recipient confirmed they got the key
           }
         });
 
         socket.once('session-key-failed', (data) => {
           if (data.recipient === recipient) {
             clearTimeout(timeout);
-            reject(new Error(data.reason || 'Key exchange failed'));
+            reject(new Error(data.reason || 'Key exchange failed'))
           }
         });
       });
 
     } catch (err) {
-      console.error('Key exchange error:', err);
-      addMsg(`Failed to exchange key with ${recipient}`, 'sys');
-      reject(err);
+      console.error('Key exchange error:', err)
+      addMsg(`Failed to exchange key with ${recipient}`, 'sys')
+      reject(err)
     }
   });
 }
 /* ----------------------------------------------------------------------------- 
    WebCrypto state (AES-GCM, 256-bit key) 
    -------------------------------------------------------------------------- */
-let cryptoKey = null
+// let cryptoKey = null
 const te = new TextEncoder()
 const td = new TextDecoder()
 
-// FOR CONTEXT, THIS IS THE AES KEY ASSIGNATION
-async function setKeyFromB64(b64) {
-  const raw = b64ToBytes(b64)
-  if (raw.length !== 32) throw new Error(`Key must decode to 32 bytes (got ${raw.length})`)
-  cryptoKey = await crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt'])
-  sessionStorage.setItem('sharedKeyB64', normalizeB64(b64))
-  addMsg('Shared key set for this session.', 'sys')
-}
+// FOR CONTEXT, THIS IS THE AES KEY ASSIGNATION, not used
+// async function setKeyFromB64(b64) {
+//   const raw = b64ToBytes(b64)
+//   if (raw.length !== 32) throw new Error(`Key must decode to 32 bytes (got ${raw.length})`)
+//   cryptoKey = await crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt'])
+//   sessionStorage.setItem('sharedKeyB64', normalizeB64(b64))
+//   addMsg('Shared key set for this session.', 'sys')
+// }
 
-async function ensureKeyLoaded() {
-  if (cryptoKey) return cryptoKey
-  const cached = sessionStorage.getItem('sharedKeyB64')
-  if (cached) {
-    try { await setKeyFromB64(cached) }
-    catch (e) { console.warn('[secure-im] stored key invalid; paste again', e) }
-  }
-  return cryptoKey
-}
+// async function ensureKeyLoaded() {
+//   if (cryptoKey) return cryptoKey
+//   const cached = sessionStorage.getItem('sharedKeyB64')
+//   if (cached) {
+//     try { await setKeyFromB64(cached) }
+//     catch (e) { console.warn('[secure-im] stored key invalid; paste again', e) }
+//   }
+//   return cryptoKey
+// }
 
 //PHASE 3
 // RSA GENERATOR
@@ -300,22 +300,22 @@ async function generateRSAkeyFromClient() {
   },
     true, ["encrypt", "decrypt"]); // encrypt -pk, decrypt - sk 
 
-  const spki = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
-  const pubkB64 = bytesToB64(new Uint8Array(spki)); // export public key in Base64 
-  console.log("Public Key (Base64):", pubkB64);
-  return { keyPair, pubkB64 };
+  const spki = await window.crypto.subtle.exportKey("spki", keyPair.publicKey)
+  const pubkB64 = bytesToB64(new Uint8Array(spki)) // export public key in Base64 
+  console.log("Public Key (Base64):", pubkB64)
+  return { keyPair, pubkB64 }
 }
 
 // Export private key for local storage
 async function exportPrivateKey(privateKey) {
   //  Export private key in pkcs8 format
-  const privkcs8 = await window.crypto.subtle.exportKey("pkcs8", privateKey); // gives raw binary 
-  return btoa(String.fromCharCode(...new Uint8Array(privkcs8))); // this converts to base64 which is safe for storage
+  const privkcs8 = await window.crypto.subtle.exportKey("pkcs8", privateKey) // gives raw binary 
+  return btoa(String.fromCharCode(...new Uint8Array(privkcs8))) // this converts to base64 which is safe for storage
 }
 
 // Import public key from Base64
 async function importPublicKey(pubkeyB64) {
-  const keyData = b64ToBytes(pubkeyB64);
+  const keyData = b64ToBytes(pubkeyB64)
   return await window.crypto.subtle.importKey(
     'spki',
     keyData,
@@ -330,7 +330,7 @@ async function importPublicKey(pubkeyB64) {
 
 // Import private key from Base64
 async function importPrivateKey(privkeyB64) {
-  const keyData = b64ToBytes(privkeyB64);
+  const keyData = b64ToBytes(privkeyB64)
   return await window.crypto.subtle.importKey(
     'pkcs8',
     keyData,
@@ -343,43 +343,38 @@ async function importPrivateKey(privkeyB64) {
 // Load private key from localStorage based on current user
 let myPrivateKey = null;
 async function loadPrivateKey() {
-  if (myPrivateKey) return myPrivateKey;
+  if (myPrivateKey) return myPrivateKey
 
   // Get current username
-  const username = displayName || ensureNameLoaded();
+  const username = displayName || ensureNameLoaded()
   if (!username) {
-    console.warn('no username set, cant load private key');
+    console.warn('no username set, cant load private key')
     return null;
   }
 
   // username-specific key
-  let stored = localStorage.getItem(`privateKey_${username}`);
-  // if its nto stored, go back to old format
-  if (!stored) {
-    console.log('trying old key format...');
-    stored = localStorage.getItem('privateKey');
-  }
+  let stored = localStorage.getItem(`privateKey_${username}`)
 
   if (!stored) {
-    console.warn('no private key found for', username);
-    return null;
+    console.warn('no private key found for', username)
+    return null
   }
 
   try {
-    const data = JSON.parse(stored);
+    const data = JSON.parse(stored)
     
     // verify the key belongs to this user
     if (data.username !== username) {
-      console.error('key mismatch! Stored key is for', data.username, 'but logged in as', username);
-      return null;
+      console.error('key mismatch! Stored key is for', data.username, 'but logged in as', username)
+      return null
     }
     
-    myPrivateKey = await importPrivateKey(data.key);
-    console.log(`private key loaded for ${username}`);
-    return myPrivateKey;
+    myPrivateKey = await importPrivateKey(data.key)
+    console.log(`private key loaded for ${username}`)
+    return myPrivateKey
   } catch (err) {
-    console.error('failed to load private key:', err);
-    return null;
+    console.error('failed to load private key:', err)
+    return null
   }
 }
 
@@ -390,25 +385,25 @@ async function loadPrivateKey() {
    -------------------------------------------------------------------------- */
 async function encryptText(plaintext, recipient) {
 // not really needed, but i just want to confirm things
-  console.log('encryption debug:');
-  console.log('   recipient:', recipient);
-  console.log('   ression keys available:', Object.keys(sessionKeys));
-  console.log('   has key for recipient?', !!sessionKeys[recipient]);
+  console.log('encryption debug:')
+  console.log('   recipient:', recipient)
+  console.log('   ression keys available:', Object.keys(sessionKeys))
+  console.log('   has key for recipient?', !!sessionKeys[recipient])
 
   // heer get the session key for this specific recipient
-  const session = sessionKeys[recipient];
+  const session = sessionKeys[recipient]
 
   // error handling if no session key found for the two
   if (!session) {
-    throw new Error(`no session key for ${recipient}. try sending @${recipient} first.`);
+    throw new Error(`no session key for ${recipient}. try sending @${recipient} first.`)
   }
 
   // logging the key age
   const keyAge = Date.now() - session.timestamp;
-  console.log('   Key age:', Math.floor(keyAge / 1000), 'seconds');
+  console.log('   Key age:', Math.floor(keyAge / 1000), 'seconds')
 
   // here we create random IV (initialization vector) for AES-GCM
-  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const iv = crypto.getRandomValues(new Uint8Array(12))
 
   // then we encrypt the message with the session key
   const ciphertext = await crypto.subtle.encrypt(
@@ -421,7 +416,7 @@ async function encryptText(plaintext, recipient) {
   );
 
 
-  console.log(`encrypted message for ${recipient}`);
+  console.log(`encrypted message for ${recipient}`)
 
   // we return IV and ciphertext (both needed to decrypt)
   return {
@@ -436,22 +431,22 @@ async function encryptText(plaintext, recipient) {
 async function decryptPacket({ ivB64, ctB64 }, sender) {
 
   // herer get the session key from this sender
-  const session = sessionKeys[sender];
+  const session = sessionKeys[sender]
 
   // just in case error happens
   if (!session) {
-    throw new Error(`No session key from ${sender}`);
+    throw new Error(`No session key from ${sender}`)
   }
 
 // again we log the key age
-  const keyAge = Date.now() - session.timestamp;
-  console.log('   Key age:', Math.floor(keyAge / 1000), 'seconds');
-  console.log('   IV length:', ivB64?.length);
-  console.log('   Ciphertext length:', ctB64?.length);
+  const keyAge = Date.now() - session.timestamp
+  console.log('   Key age:', Math.floor(keyAge / 1000), 'seconds')
+  console.log('   IV length:', ivB64?.length)
+  console.log('   Ciphertext length:', ctB64?.length)
 
   // convert base64 back to bytes
-  const iv = b64ToBytes(ivB64);
-  const given_ciphertext = b64ToBytes(ctB64);
+  const iv = b64ToBytes(ivB64)
+  const given_ciphertext = b64ToBytes(ctB64)
 
   //this is decrypt using the session key
   const plaintextBuffer = await crypto.subtle.decrypt(
@@ -463,10 +458,10 @@ async function decryptPacket({ ivB64, ctB64 }, sender) {
     given_ciphertext
   );
 
-  console.log(`decrypted message from ${sender}`);
+  console.log(`decrypted message from ${sender}`)
 
   // here we convert bytes back to text
-  decryptedMessage = td.decode(plaintextBuffer);
+  decryptedMessage = td.decode(plaintextBuffer)
 
   return decryptedMessage
 }
@@ -525,56 +520,56 @@ socket.on('history', async (items) => {
 
 socket.on('encrypted-message', async (packet) => {
 // debugging logs, see browser console
-  console.log('RECEIVED MESSAGE:');
-  console.log('   From:', packet.sender);
-  console.log('   To:', packet.recipient);
+  console.log('RECEIVED MESSAGE:')
+  console.log('   From:', packet.sender)
+  console.log('   To:', packet.recipient)
   console.log('   Current user:', displayName);
-  console.log('   Is for me?', packet.recipient === displayName);
+  console.log('   Is for me?', packet.recipient === displayName)
 
   try {
     // check if we have session key from sender
     if (!sessionKeys[packet.sender]) {
-      console.log(`no session key from ${packet.sender} yet, waiting...`);
+      console.log(`no session key from ${packet.sender} yet, waiting...`)
       // Wait a bit and try again (in case key is in transit)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000))
       if (!sessionKeys[packet.sender]) {
-        addMsg(`No session key from ${packet.sender}. Ask them to resend.`, 'sys');
+        addMsg(`No session key from ${packet.sender}. Ask them to resend.`, 'sys')
         return;
       }
     }
 
     // PHASE 3 UPDATE: Decrypt with session key
-    const txt = await decryptPacket(packet, packet.sender);
+    const txt = await decryptPacket(packet, packet.sender)
 
     // Show message in chat
-    const messagesEl = document.getElementById('messages');
+    const messagesEl = document.getElementById('messages')
     if (messagesEl) {
-      const div = document.createElement('div');
-      div.textContent = `${packet.sender}: ${txt}`;
-      div.style.textAlign = 'left';
-      messagesEl.appendChild(div);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
+      const div = document.createElement('div')
+      div.textContent = `${packet.sender}: ${txt}`
+      div.style.textAlign = 'left'
+      messagesEl.appendChild(div)
+      messagesEl.scrollTop = messagesEl.scrollHeight
     }
 
     if (packet.recipient === displayName && !packet.read) {
-      socket.emit('mark-read', [packet.id]);
+      socket.emit('mark-read', [packet.id])
     }
   } catch (err) {
-    console.error('Decryption error:', err);
-    addMsg(`Failed to decrypt message from ${packet.sender}`, 'sys');
+    console.error('Decryption error:', err)
+    addMsg(`Failed to decrypt message from ${packet.sender}`, 'sys')
 
 // error message
-    console.error('MESSAGE ERROR:', err);
-    addMsg(`Failed to decrypt message from ${packet.sender}: ${err.message}`, 'sys');
+    console.error('MESSAGE ERROR:', err)
+    addMsg(`Failed to decrypt message from ${packet.sender}: ${err.message}`, 'sys')
     
     // Show in messages UI too
-    const messagesEl = document.getElementById('messages');
+    const messagesEl = document.getElementById('messages')
     if (messagesEl) {
-      const div = document.createElement('div');
-      div.textContent = `Encrypted message from ${packet.sender} - decryption failed`;
-      div.style.color = 'red';
-      div.style.fontStyle = 'italic';
-      messagesEl.appendChild(div);
+      const div = document.createElement('div')
+      div.textContent = `Encrypted message from ${packet.sender} - decryption failed`
+      div.style.color = 'red'
+      div.style.fontStyle = 'italic'
+      messagesEl.appendChild(div)
     }
   }
 })
@@ -588,16 +583,16 @@ socket.on('read-receipt', ({ id }) => updateMyMsgStatus(id, 'read'))
 
 socket.on('session-key-exchange', async (data) => {
   try {
-    console.log(`received key from ${data.sender}`); //make sure we received the key
+    console.log(`received key from ${data.sender}`) //make sure we received the key
 
     // here, retrieve our private key stored in browser
-    const privateKey = await loadPrivateKey();
+    const privateKey = await loadPrivateKey()
     if (!privateKey) {
-      throw new Error('Private key not available');
+      throw new Error('Private key not available')
     }
 
     // here, we convert received encrypted key from Base64 to bytes for better handling
-    const encryptedAESKey = b64ToBytes(data.encryptedSessionKey);
+    const encryptedAESKey = b64ToBytes(data.encryptedSessionKey)
 
     // here, we now DECRYPT the session key with OUR private RSA key
     const rawKey = await crypto.subtle.decrypt(
@@ -621,10 +616,10 @@ socket.on('session-key-exchange', async (data) => {
       timestamp: Date.now() // included to know when to renew
     };
 
-    console.log(`key saved for ${data.sender}`);
+    console.log(`key saved for ${data.sender}`)
 
   } catch (err) {
-    console.error('failed to receive key:', err);
+    console.error('failed to receive key:', err)
   }
 });
 
@@ -711,28 +706,28 @@ function caretClientRect(input) {
    -------------------------------------------------------------------------- */
 document.addEventListener('DOMContentLoaded', async () => {
   if (window._wired) return
-  window._wired = true;
+  window._wired = true
 
   // PHASE 3 UPDATE: private key is loaded after username set
   // For chat page, username comes from server
-  const displayNameEl = document.getElementById('displayName');
+  const displayNameEl = document.getElementById('displayName')
   if (displayNameEl && displayNameEl.textContent) {
-    displayName = displayNameEl.textContent.trim();
-    console.log('Username from page:', displayName);
+    displayName = displayNameEl.textContent.trim()
+    console.log('Username from page:', displayName)
   }
 
   // Load private key for this user and debugs
-  await loadPrivateKey();
+  await loadPrivateKey()
   if (myPrivateKey) {
-    console.log('Private key loaded for', displayName);
+    console.log('Private key loaded for', displayName)
   } else {
-    console.warn('No private key found for', displayName);
+    console.warn('No private key found for', displayName)
   }
 
   // phase 3: here we load our private key from local storage when the client starts
-  await loadPrivateKey();
+  await loadPrivateKey()
   if (myPrivateKey) {
-    console.log('private key loaded from local storage');
+    console.log('private key loaded from local storage')
   }
 
   const setKeyButton = document.getElementById('setKeyButton')
@@ -839,7 +834,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     })
 
-    ensureKeyLoaded().then(() => { if (cryptoKey) addMsg('Key loaded from session (ready).', 'sys') })
+    // ensureKeyLoaded().then(() => { if (cryptoKey) addMsg('Key loaded from session (ready).', 'sys') })
   }
 
   function parseAtRecipient(text) {
@@ -855,7 +850,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function submitRegistration(username, password, confirmPassword) {
 
     // generate RSA key pair on client side
-    const { keyPair, pubkB64 } = await generateRSAkeyFromClient();
+    const { keyPair, pubkB64 } = await generateRSAkeyFromClient()
 
     // save private key for future decryption
     // basically we export the private key and then save it to browser locally! so we can retrive it later when user logs in.
@@ -879,30 +874,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     if (response.redirected && response.url.includes('/login')) {
-      alert('Registration successful! Please log in.');
-      window.location.href = '/login';
+      alert('Registration successful! Please log in.')
+      window.location.href = '/login'
     } else {
-      alert('Registration failed. Please try again.');
+      alert('Registration failed. Please try again.')
     }
   }
 
   if (document.getElementById('registerForm')) {
     document.getElementById('registerForm').addEventListener('submit', async function (e) {
       e.preventDefault();
-      const btn = this.querySelector('button');
-      btn.textContent = 'Generating keys...';
-      btn.disabled = true;
-      await submitRegistration(this.username.value, this.password.value, this.confirmpassword.value);
+      const btn = this.querySelector('button')
+      btn.textContent = 'Generating keys...'
+      btn.disabled = true
+      await submitRegistration(this.username.value, this.password.value, this.confirmpassword.value)
     });
   }
-
-
-  async function exportPrivateKey(privateKey) {
-    //  export private key in pkcs8 format
-    const privkcs8 = await window.crypto.subtle.exportKey("pkcs8", privateKey); // gives raw binary 
-    return btoa(String.fromCharCode(...new Uint8Array(privkcs8))); // this converts to base64 which is safe for storage
-  }
-
 
   window.setDisplayName = setDisplayName
   window.setRecipient = setRecipient
@@ -910,50 +897,50 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.submitRegistration = submitRegistration
 
   // phase 3 chat phase handlers!
-  const usersEl = document.getElementById('users');
-  const sendBtn = document.getElementById('sendButton');
-  const msgInput = document.getElementById('messageInput');
-  const chatWithEl = document.getElementById('chatWith');
-  const messagesEl = document.getElementById('messages');
+  const usersEl = document.getElementById('users')
+  const sendBtn = document.getElementById('sendButton')
+  const msgInput = document.getElementById('messageInput')
+  const chatWithEl = document.getElementById('chatWith')
+  const messagesEl = document.getElementById('messages')
 
   if (usersEl && sendBtn && msgInput) {
-    console.log('Chat interface detected');
+    console.log('Chat interface detected')
 
     // When user clicks on a name in sidebar
     usersEl.addEventListener('click', async (e) => {
-      const div = e.target.closest('.user');
-      if (!div) return;
+      const div = e.target.closest('.user')
+      if (!div) return
 
-      const username = div.dataset.username;
+      const username = div.dataset.username
 
       // PHASE 3: This initializes the session key!
-      await setRecipient(username);
+      await setRecipient(username)
 
       // Update UI
-      if (chatWithEl) chatWithEl.textContent = "Chatting with: " + username;
-      if (messagesEl) messagesEl.innerHTML = "";
+      if (chatWithEl) chatWithEl.textContent = "Chatting with: " + username
+      if (messagesEl) messagesEl.innerHTML = ""
 
-      console.log(`Session key initialized for ${username}`);
+      console.log(`Session key initialized for ${username}`)
     });
 
     // When user clicks Send button
     sendBtn.onclick = async () => {
-      if (!currentRecipient) return alert("Select a user first");
+      if (!currentRecipient) return alert("Select a user first")
 
-      const text = msgInput.value.trim();
-      if (!text) return;
+      const text = msgInput.value.trim()
+      if (!text) return
 
       try {
 
         if (!sessionKeys[currentRecipient]) {
-          console.log('No session key, initializing...');
-          await initializeSessionKey(currentRecipient);
+          console.log('No session key, initializing...')
+          await initializeSessionKey(currentRecipient)
           // give a small delay to ensure key is delivered
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 500))
         }
 
         // PHASE 3: Encrypt with session key
-        const packet = await encryptText(text, currentRecipient);
+        const packet = await encryptText(text, currentRecipient)
 
         // Send to server
         socket.emit("encrypted-message", {
@@ -965,19 +952,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Show in chat
         if (messagesEl) {
-          const div = document.createElement('div');
-          div.textContent = `You: ${text}`;
-          div.style.textAlign = 'right';
-          messagesEl.appendChild(div);
-          messagesEl.scrollTop = messagesEl.scrollHeight;
+          const div = document.createElement('div')
+          div.textContent = `You: ${text}`
+          div.style.textAlign = 'right'
+          messagesEl.appendChild(div)
+          messagesEl.scrollTop = messagesEl.scrollHeight
         }
 
         // just debugging code
-        msgInput.value = "";
-        console.log(`Message sent to ${currentRecipient}`);
+        msgInput.value = ""
+        console.log(`Message sent to ${currentRecipient}`)
       } catch (err) {
-        console.error('Send error:', err);
-        alert(err.message);
+        console.error('Send error:', err)
+        alert(err.message)
       }
     };
   }
