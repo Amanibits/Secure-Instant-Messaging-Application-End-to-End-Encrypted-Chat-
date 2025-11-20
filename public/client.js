@@ -541,28 +541,56 @@ socket.on('encrypted-message', async (packet) => {
     // PHASE 3 UPDATE: Decrypt with session key
     const txt = await decryptPacket(packet, packet.sender)
 
-    // Show message in chat
-    const messagesEl = document.getElementById('messages')
-    if (messagesEl) {
-      const div = document.createElement('div')
-      div.textContent = `${packet.sender}: ${txt}`
-      div.style.textAlign = 'left'
-      messagesEl.appendChild(div)
-      messagesEl.scrollTop = messagesEl.scrollHeight
+
+    // Salma Phase 4: verify integrity & authenticity
+    let isVerified = false;
+    try {
+      // recompute the hash of recieved message
+      const recomputHash = await crypto.subtle.digest('SHA-256', te.encode(txt));
+
+      // obtain the sender's bublic key from the server
+      const pubResp = await new Promise(r => socket.emit('request-public-key', { username: packet.sender }, r));
+      if (!pubResp?.publicKey) throw new Error("No public key");
+      const publicKey = await crypto.subtle.importKey(
+        "spki",
+        b64ToBytes(pubResp.publicKey),
+        { name: "RSA-PSS", hash: "SHA-256" },
+        true,
+        ["verify"]
+      );
+
+      // verify if the signature matches the sender's bublic key
+      if (!packet.signatureB64) throw new Error("Missing signature");
+
+      
+      isVerified = await crypto.subtle.verify(
+        { name: "RSA-PSS", saltLength: 32 },
+        publicKey,
+        b64ToBytes(packet.signatureB64),
+        recomputHash
+      );
+
+    } catch (err) {
+      console.error("Verification failed:", err);
     }
 
+    // show message and if its verified or tampered
+    const badge = isVerified ? " [Verified]" : " [Tampered]";
+    addMsg(`${packet.sender}: ${txt}${badge}`, 'them');
+    if (!isVerified) {
+      const bubble = document.querySelector('#messages .msg:last-child .bubble');
+      if (bubble) bubble.style.color = 'red';
+    }
+
+    
     if (packet.recipient === displayName && !packet.read) {
       socket.emit('mark-read', [packet.id])
     }
   } catch (err) {
-    console.error('Decryption error:', err)
+    console.error('Decryption or verification failed:', err)
     addMsg(`Failed to decrypt message from ${packet.sender}`, 'sys')
+    addMsg(`Error: ${err.message}`, 'sys')
 
-// error message
-    console.error('MESSAGE ERROR:', err)
-    addMsg(`Failed to decrypt message from ${packet.sender}: ${err.message}`, 'sys')
-    
-    // Show in messages UI too
     const messagesEl = document.getElementById('messages')
     if (messagesEl) {
       const div = document.createElement('div')
@@ -570,9 +598,13 @@ socket.on('encrypted-message', async (packet) => {
       div.style.color = 'red'
       div.style.fontStyle = 'italic'
       messagesEl.appendChild(div)
+      messagesEl.scrollTop = messagesEl.scrollHeight
     }
   }
 })
+
+  
+
 
 socket.on('delivery-receipt', ({ id }) => updateMyMsgStatus(id, 'delivered'))
 socket.on('read-receipt', ({ id }) => updateMyMsgStatus(id, 'read'))
@@ -933,7 +965,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
 
         if (!sessionKeys[currentRecipient]) {
-          console.log('No session key, initializing...')
+          //console.log('No session key, initializing...')
           await initializeSessionKey(currentRecipient)
           // give a small delay to ensure key is delivered
           await new Promise(resolve => setTimeout(resolve, 500))
@@ -942,31 +974,59 @@ document.addEventListener('DOMContentLoaded', async () => {
         // PHASE 3: Encrypt with session key
         const packet = await encryptText(text, currentRecipient)
 
-        // Send to server
+        // phase 4
+        const encoder = new TextEncoder();
+        const msgData = encoder.encode(text);
+        const msgHash = await crypto.subtle.digest('SHA-256', msgData);
+
+        // load sender's private key 
+        let privB64;
+        const key1 = localStorage.getItem(`privateKey_${displayName}`);
+        const key2 = localStorage.getItem('privateKey');
+        const stored = key1 || key2;
+        if (!stored) throw new Error("Private key missing — re-register");
+        try {
+          privB64 = JSON.parse(stored).key;
+        } catch {
+          privB64 = JSON.parse(stored); 
+        }
+
+        // import sender's private key to sign with it
+        const privateKey = await crypto.subtle.importKey(
+          "pkcs8",
+          b64ToBytes(privB64),
+          { name: "RSA-PSS", hash: "SHA-256" },
+          false,
+          ["sign"]
+        )
+
+        // sign the message with the sender's private key
+        const signature = await crypto.subtle.sign(
+          { name: "RSA-PSS", saltLength: 32 },
+          privateKey,
+          msgHash
+        )
+
+        const signatureB64 = bytesToB64(new Uint8Array(signature))
+
+        // send encrypted message and the signature 
         socket.emit("encrypted-message", {
           sender: displayName,
           recipient: currentRecipient,
           ivB64: packet.ivB64,
-          ctB64: packet.ctB64
-        });
+          ctB64: packet.ctB64,
+          signatureB64: signatureB64
+        })
 
-        // Show in chat
-        if (messagesEl) {
-          const div = document.createElement('div')
-          div.textContent = `You: ${text}`
-          div.style.textAlign = 'right'
-          messagesEl.appendChild(div)
-          messagesEl.scrollTop = messagesEl.scrollHeight
-        }
-
-        // just debugging code
+        // show message 
+        addMsg(`You: ${text} [Verified]`, 'me')
         msgInput.value = ""
-        console.log(`Message sent to ${currentRecipient}`)
-      } catch (err) {
-        console.error('Send error:', err)
-        alert(err.message)
+    }
+    catch (err) {
+        console.error('Send error:', err);
+        alert(err.message || 'Failed to send message');
       }
-    };
-  }
+    }
 
+  }
 })
