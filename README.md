@@ -40,6 +40,13 @@ A secure real-time messaging application using **AES-GCM encryption in the brows
 - RSA public key is retrieved from db, while private key is locally stored in the computer.
 - encryption and decryption of AES using RSA public and private keys.
 
+### Phase 4 (Complete)
+- Every message is hashed with SHA-256  
+- Hash is signed using sender’s private RSA key (RSA-PSS)  
+- Signature is sent together with the encrypted message  
+- Receiver recomputes hash and verifies using sender’s public key
+- Display whether the message is authentic or has been tampered with
+
 
 ---
 
