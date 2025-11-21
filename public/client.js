@@ -555,7 +555,7 @@ socket.on('encrypted-message', async (packet) => {
 
     // show message and if its verified or tampered
     const statusText = isVerified ? 'Verified' : 'Tampered';
-    addMsg(txt, 'them', packet.ts, statusText);
+    addMsg(`${packet.sender} : ${txt}`, 'them', packet.ts, statusText);
 
     // color the bubble red if tampered
     const lastMsgEl = document.querySelector('#messages .msg:last-child');
@@ -563,8 +563,6 @@ socket.on('encrypted-message', async (packet) => {
       const bubble = lastMsgEl.querySelector('.bubble');
       if (bubble) bubble.style.color = 'red';
     }
-
-    // optionally, set the status in the span exactly like updateMyMsgStatus
     if (lastMsgEl) {
       const statusEl = lastMsgEl.querySelector('.status');
       if (statusEl) {
