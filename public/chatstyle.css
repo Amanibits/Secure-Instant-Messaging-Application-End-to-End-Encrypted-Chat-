@@ -31,7 +31,7 @@ header {
 }
 
 #displayName {
-    font-size: larger;
+    font-size: 20px;
     color: white;
     padding-top: 10px;
 }
@@ -113,7 +113,17 @@ header {
 }
 
 #messages div:nth-child(even) {
-    background: #dcdde1;
+    background: #e5e6eb;
+}
+
+/** This is top level styling to overwrite previous stylings
+ and make sure message colors alternate**/
+#messages > .msg:nth-child(odd) .bubble {
+    background-color: #f1f2f6;  
+}
+
+#messages > .msg:nth-child(even) .bubble {
+    background-color: #e5e6eb;  
 }
 
 #chat > div:last-child {
@@ -139,6 +149,7 @@ header {
     font-weight: bold;
     cursor: pointer;
     transition: background 0.2s;
+    font-size: 15px;
 }
 
 #sendButton:hover {
@@ -160,4 +171,7 @@ header {
     color: #a475b3;
 }
 
+#usersTop{
+    margin-top: 10px;
+}
 

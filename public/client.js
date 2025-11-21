@@ -3,17 +3,11 @@
 // ROLE OF THIS FILE
 //   • Owns the key (WebCrypto AES-GCM) and does all encrypt/decrypt in-browser
 //   • Talks to server via Socket.IO with ciphertext only
-//   • Renders UI, @mention recipient picker, timestamps, and message status
+//   • Renders UI, picks recipient , timestamps, and message status
 //
 // DATA FLOW (browser):
 //   plaintext --AES-GCM--> {iv, ciphertext}  ---> server
 //   server stores {sender, recipient, ivB64, ctB64, ts, delivered, read}
-//
-// STATUS MODEL (for “me” bubbles):
-//   sending… → (ack) sent | delivered → (read-receipt) read
-//   • sent: stored server-side but recipient offline
-//   • delivered: recipient device received it (online)
-//   • read: the recipient rendered it (client emitted mark-read)
 //
 //  UPDATES:
 // - Manual AES generation removed (user pastes Base64 32-byte key), update to automatically generate
@@ -44,7 +38,7 @@ function addMsg(text, cls, ts, status, id) {
   const meta = document.createElement('div')
   meta.className = 'meta'
   const time = formatTs(ts)
-  meta.textContent = time && status ? `${time} • ${status}` : (time || status || '')
+  meta.innerHTML = `${time ? `<span class="time">${time}</span>` : ''}${status ? ` • <span class="status">${status}</span>` : ''}`
 
   div.appendChild(bubble)
   if (meta.textContent) div.appendChild(meta)
@@ -93,7 +87,7 @@ function ensureNameLoaded() {
 }
 
 /* ----------------------------------------------------------------------------- 
-   Recipient state (set when user types @… and chooses a name) 
+   Recipient state 
    -------------------------------------------------------------------------- */
 let currentRecipient = null
 
@@ -271,24 +265,6 @@ async function exchangeSessionKey(recipient, aesKey) {
 const te = new TextEncoder()
 const td = new TextDecoder()
 
-// FOR CONTEXT, THIS IS THE AES KEY ASSIGNATION, not used
-// async function setKeyFromB64(b64) {
-//   const raw = b64ToBytes(b64)
-//   if (raw.length !== 32) throw new Error(`Key must decode to 32 bytes (got ${raw.length})`)
-//   cryptoKey = await crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt'])
-//   sessionStorage.setItem('sharedKeyB64', normalizeB64(b64))
-//   addMsg('Shared key set for this session.', 'sys')
-// }
-
-// async function ensureKeyLoaded() {
-//   if (cryptoKey) return cryptoKey
-//   const cached = sessionStorage.getItem('sharedKeyB64')
-//   if (cached) {
-//     try { await setKeyFromB64(cached) }
-//     catch (e) { console.warn('[secure-im] stored key invalid; paste again', e) }
-//   }
-//   return cryptoKey
-// }
 
 //PHASE 3
 // RSA GENERATOR
@@ -483,12 +459,15 @@ function updateUserLists(res) {
 function updateMyMsgStatus(id, newStatus) {
   const el = document.querySelector(`.msg.me[data-mid="${id}"]`)
   if (!el) return
-  const meta = el.querySelector('.meta')
-  if (!meta) return
-  const parts = meta.textContent.split('•')
-  const timePart = parts[0].trim()
-  meta.textContent = timePart ? `${timePart} • ${newStatus}` : newStatus
+  const statusEl = el.querySelector('.status')
+  if (statusEl) {
+    statusEl.textContent = newStatus
+  } else {
+    const meta = el.querySelector('.meta')
+    if (meta) meta.innerHTML += ` • <span class="status">${newStatus}</span>`
+  }
 }
+
 
 // Auto-register if name already set
 socket.on('connect', () => {
@@ -575,13 +554,23 @@ socket.on('encrypted-message', async (packet) => {
     }
 
     // show message and if its verified or tampered
-    const badge = isVerified ? " [Verified]" : " [Tampered]";
-    addMsg(`${packet.sender}: ${txt}${badge}`, 'them');
-    if (!isVerified) {
-      const bubble = document.querySelector('#messages .msg:last-child .bubble');
+    const statusText = isVerified ? 'Verified' : 'Tampered';
+    addMsg(txt, 'them', packet.ts, statusText);
+
+    // color the bubble red if tampered
+    const lastMsgEl = document.querySelector('#messages .msg:last-child');
+    if (!isVerified && lastMsgEl) {
+      const bubble = lastMsgEl.querySelector('.bubble');
       if (bubble) bubble.style.color = 'red';
     }
 
+    // optionally, set the status in the span exactly like updateMyMsgStatus
+    if (lastMsgEl) {
+      const statusEl = lastMsgEl.querySelector('.status');
+      if (statusEl) {
+        statusEl.textContent = statusText;
+      }
+    }
     
     if (packet.recipient === displayName && !packet.read) {
       socket.emit('mark-read', [packet.id])
@@ -846,16 +835,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         const packet = await encryptText(cleanText, recipient)
         const nowIso = new Date().toISOString()
         const tmpId = 'tmp-' + Date.now().toString(36) + Math.random().toString(36).slice(2)
-        addMsg(`${displayName} → ${recipient}: ${cleanText}`, 'me', nowIso, 'sending…', tmpId)
+        addMsg(`${displayName} → ${recipient}: ${cleanText}`, 'me', nowIso, 'Sent', tmpId)
 
-        socket.emit('encrypted-message', { sender: displayName, recipient, ...packet }, (ack) => {
+        socket.emit('encrypted-message', { sender: displayName, recipient, ...packet , ts: nowIso}, (ack) => {
           if (!ack?.ok) {
             updateMyMsgStatus(tmpId, 'failed')
             return
           }
           const el = document.querySelector(`.msg.me[data-mid="${tmpId}"]`)
           if (el) el.dataset.mid = ack.id
-          updateMyMsgStatus(ack.id, ack.delivered ? 'delivered' : 'sent')
+          updateMyMsgStatus(ack.id, ack.delivered ? 'delivered' : 'Sent')
         })
 
         messageInputField.value = ''
@@ -949,7 +938,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       await setRecipient(username)
 
       // Update UI
-      if (chatWithEl) chatWithEl.textContent = "Chatting with: " + username
+      if (chatWithEl) chatWithEl.textContent = "You are sending messages to: " + username
       if (messagesEl) messagesEl.innerHTML = ""
 
       console.log(`Session key initialized for ${username}`)
@@ -1009,20 +998,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const signatureB64 = bytesToB64(new Uint8Array(signature))
 
-        // send encrypted message and the signature 
+        // generate temporary ID for UI
+        const tmpId = 'tmp-' + Date.now().toString(36) + Math.random().toString(36).slice(2)
+        addMsg(`You: ${text}`, 'me', new Date().toISOString(), 'Sent', tmpId)
+
+        const nowIso = new Date().toISOString()
+        
         socket.emit("encrypted-message", {
           sender: displayName,
           recipient: currentRecipient,
           ivB64: packet.ivB64,
           ctB64: packet.ctB64,
-          signatureB64: signatureB64
+          signatureB64: signatureB64,
+          mid: tmpId,
+          ts: nowIso
         })
 
-        // show message 
-        addMsg(`You: ${text} [Verified]`, 'me')
         msgInput.value = ""
-    }
-    catch (err) {
+
+      } catch (err) {
         console.error('Send error:', err);
         alert(err.message || 'Failed to send message');
       }

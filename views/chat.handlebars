@@ -1,4 +1,4 @@
-<!-- Zeinab's part: The chatting page UI! UNDER CONSTRUCTIOOONN -->
+<!-- Zeinab's part: The chatting page html! -->
 
 <head>
     <meta charset="UTF-8">
@@ -12,15 +12,19 @@
         <a id="logoutButton" href="/logout/{{name}}">Logout</a>
     </header>
     <div id="sidebar">
-        <h4>Users</h4>
+        <h4 id="usersTop">Users</h4>
         <div id="users">
             {{#each users}}
+            <!-- Users will only show if they are online! -->
+            {{#if online}}
             <div class="user" data-username="{{this.username}}">
                 <span class="username">{{this.username}}</span>
+                <!-- I put this if incase a user is loaded despite being offline, they'll show they're offline -->
                 <span class="status {{#if online}}online{{else}}offline{{/if}}">
                     {{#if online}}Online{{else}}Offline{{/if}}
                 </span>
             </div>
+            {{/if}}
             {{/each}}
         </div>
     </div>
@@ -28,12 +32,6 @@
     <div id="chat">
         <h4 id="chatWith">Select a user</h4>
         <div id="messages"></div>
-
-        <!-- This will be removed laterrr -->
-        <div id="keyRow">
-            <input id="keyInput" type="password" placeholder="Paste 256-bit key (Base64)" autocomplete="off">
-            <button id="setKeyBtn">Set Key</button>
-        </div>
 
         <div id="messageBox">
             <input id="messageInput" placeholder="Message">
@@ -60,190 +58,6 @@
 
     <script src="/client.js"></script>
 
-{{!-- not needed anymore, as we have it in client.js! --}}
-{{!-- did not le --}}
-    <!-- This is mostly from Amani's code not mine -->
-    {{!--
-    <script>
-        // -------------------------
-        // DOM References
-        // -------------------------
-        const socket = io()
-        const usersEl = document.getElementById('users')
-        const messagesEl = document.getElementById('messages')
-        const chatWithEl = document.getElementById('chatWith')
-        const messageInput = document.getElementById('messageInput')
-        const sendMessageButton = document.getElementById('sendButton')
-
-        const nameInput = document.getElementById('nameInput')
-        const setNameButton = document.getElementById('setNameBtn')
-        const displayNameEl = document.getElementById('displayName')
-
-        const keyInput = document.getElementById('keyInput')
-        const setKeyButton = document.getElementById('setKeyBtn')
-
-        // -------------------------
-        // App State
-        // -------------------------
-        let displayName = "Guest"
-        let currentUser = null
-        let cryptoKey = null  // AES CryptoKey
-
-        // -------------------------
-        // Base64 Helpers
-        // -------------------------
-        function normalizeB64(b64) {
-            let s = b64.trim().replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/')
-            return s + '==='.slice((s.length + 3) % 4)
-        }
-
-        function b64ToBytes(b64) {
-            const bin = atob(normalizeB64(b64))
-            return Uint8Array.from(bin, c => c.charCodeAt(0))
-        }
-
-        function bytesToB64(bytes) {
-            return btoa(String.fromCharCode(...bytes))
-        }
-
-        // -------------------------
-        // AES Key Handling
-        // -------------------------
-        async function setKey(b64) {
-            const raw = b64ToBytes(b64)
-            if (raw.length !== 32) throw new Error("Key must be 32 bytes (256-bit)")
-            cryptoKey = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"])
-        }
-
-        // -------------------------
-        // AES Encrypt / Decrypt
-        // -------------------------
-        async function encrypt(text) {
-            if (!cryptoKey) throw new Error("No encryption key set")
-            const iv = crypto.getRandomValues(new Uint8Array(12))
-            const ct = new Uint8Array(await crypto.subtle.encrypt(
-                { name: "AES-GCM", iv },
-                cryptoKey,
-                new TextEncoder().encode(text)
-            ))
-            return { ivB64: bytesToB64(iv), ctB64: bytesToB64(ct) }
-        }
-
-        async function decrypt(ivB64, ctB64) {
-            const iv = b64ToBytes(ivB64)
-            const ct = b64ToBytes(ctB64)
-            const pt = await crypto.subtle.decrypt(
-                { name: "AES-GCM", iv },
-                cryptoKey,
-                ct
-            )
-            return new TextDecoder().decode(pt)
-        }
-
-        // -------------------------
-        // UI Helpers
-        // -------------------------
-        function addMessage(sender, text) {
-            const div = document.createElement('div')
-            div.textContent = sender + ": " + text
-            messagesEl.appendChild(div)
-            messagesEl.scrollTop = messagesEl.scrollHeight
-        }
-
-        // -------------------------
-        // Set display name (AUTOMATIC AT LOGIN!)
-        // -------------------------
-        window.addEventListener('DOMContentLoaded', () => {
-            displayName = "{{name}}"; // Handlebars variable
-            displayNameEl.textContent = displayName;
-            socket.emit("register", displayName);
-        });
-
-
-        // -------------------------
-        // Set AES key (accept hex or Base64)
-        // -------------------------
-        function hexToBytes(hex) {
-            if (hex.length % 2 !== 0) throw new Error("Invalid hex string")
-            const bytes = new Uint8Array(hex.length / 2)
-            for (let i = 0; i < hex.length; i += 2) {
-                bytes[i / 2] = parseInt(hex.substr(i, 2), 16)
-            }
-            return bytes
-        }
-
-        async function setKeyFlexible(input) {
-            let raw
-            // Try hex first (64 chars)
-            if (/^[0-9a-fA-F]{64}$/.test(input)) {
-                raw = hexToBytes(input)
-            } else {
-                // Otherwise assume Base64
-                raw = b64ToBytes(input)
-            }
-
-            if (raw.length !== 32) throw new Error("Key must be 32 bytes (256-bit)")
-            cryptoKey = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"])
-        }
-
-        setKeyButton.onclick = async () => {
-            try {
-                await setKeyFlexible(keyInput.value.trim())
-                alert("AES key set")
-            } catch (e) {
-                alert(e.message)
-            }
-        }
-
-
-        // -------------------------
-        // Select user to chat with
-        // -------------------------
-        usersEl.addEventListener('click', e => {
-            const div = e.target.closest('.user')
-            if (!div) return
-            currentUser = div.dataset.username
-            chatWithEl.textContent = "You are now chatting with: " + currentUser
-            messagesEl.innerHTML = ""
-        })
-
-        // -------------------------
-        // Send message
-        // -------------------------
-        sendMessageButton.onclick = async () => {
-            if (!displayName) return alert("Set your display name first")
-            if (!cryptoKey) return alert("Set your AES key first")
-            if (!currentUser) return alert("Select a user")
-
-            const text = messageInput.value.trim()
-            if (!text) return
-
-            const packet = await encrypt(text)
-
-            socket.emit("encrypted-message", {
-                sender: displayName,
-                recipient: currentUser,
-                ivB64: packet.ivB64,
-                ctB64: packet.ctB64
-            })
-
-            addMessage("Me", text)
-            messageInput.value = ""
-        }
-
-        // -------------------------
-        // Receive message
-        // -------------------------
-        socket.on("encrypted-message", async msg => {
-            if (msg.sender !== currentUser) return
-            try {
-                const text = await decrypt(msg.ivB64, msg.ctB64)
-                addMessage(msg.sender, text)
-            } catch {
-                addMessage("System", "Could not decrypt message")
-            }
-        })
-    </script> --}}
 
 </body>
 
